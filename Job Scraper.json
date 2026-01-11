@@ -1,0 +1,674 @@
+{
+  "name": "Job Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        4480,
+        2048
+      ],
+      "id": "f9674c65-b619-49f4-82ca-6756ea6521f4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "value": "BHzefUZlZRKWxkTck",
+          "mode": "list"
+        },
+        "customBody": "{\n    \"contractType\": \"I\",\n    \"experienceLevel\": \"1\",\n    \"location\": \"United States\",\n    \"proxy\": {\n        \"useApifyProxy\": true,\n        \"apifyProxyGroups\": []\n    },\n    \"publishedAt\": \"r86400\",\n    \"rows\": 20,\n    \"title\": \"Software OR Data\"\n}",
+        "timeout": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        5024,
+        2048
+      ],
+      "id": "9d0ae055-f624-4f36-9b8a-6521c75e54b0",
+      "name": "Call API",
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "hidden",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Datasets",
+        "datasetId": "={{ $json.defaultDatasetId }}",
+        "offset": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        5184,
+        2048
+      ],
+      "id": "b1b5cde3-79c0-4971-a3e4-6b175111cd31",
+      "name": "Parse Data",
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "hidden",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "hidden"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        4800,
+        2048
+      ],
+      "id": "f77b7eb8-f1cc-43d5-9d24-3aaf855f9afe",
+      "name": "Get Template Resume",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "hidden",
+          "name": "GoogleAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "replaceAll",
+              "text": "2028",
+              "replaceText": "={{ String($('Tailor Resume to JD').item.json.output[0].content[0].text.graduation_year) }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "Java, Python, JavaScript, TypeScript, SQL, Bash, HTML/CSS, C, .NET",
+              "replaceText": "={{ $('Tailor Resume to JD').item.json.output[0].content[0].text.skills_lines.Languages }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "Pandas, NumPy, scikit-learn, PyTorch, TensorFlow, Seaborn, Matplotlib, Keras",
+              "replaceText": "={{ $('Tailor Resume to JD').item.json.output[0].content[0].text.skills_lines['Data & ML'] }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "React, Next.js, REST/GraphQL APIs, MySQL",
+              "replaceText": "={{ $('Tailor Resume to JD').item.json.output[0].content[0].text.skills_lines['Web & Backend'] }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "Git, AWS, CI/CD, Jupyter Notebook, Linux, crontab, smtplib, Microsoft Tools",
+              "replaceText": "={{ $('Tailor Resume to JD').item.json.output[0].content[0].text.skills_lines['Tools & Platforms'] }}"
+            }
+          ]
+        }
+      },
+      "id": "b090a96a-b941-43aa-803d-114ea9330188",
+      "name": "Update Copied Resume",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        5472,
+        2432
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "hidden",
+          "name": "GoogleAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Update Copied Resume').item.json.documentId }}"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {}
+          }
+        }
+      },
+      "id": "c8d13636-0416-4bd7-ab36-38ceeadc127c",
+      "name": "Export Resume as PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5696,
+        2432
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hidden",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2f61f575-b386-4884-ae27-dd145b672d1d",
+              "leftValue": "={{ $json.output[0].content[0].text.verdict }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        4688,
+        2432
+      ],
+      "id": "062dd22b-ceb5-4e89-8a56-1d01d3d75a61",
+      "name": "Filter Irrelevant Jobs"
+    },
+    {
+      "parameters": {
+        "maxItems": 20
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        5472,
+        2048
+      ],
+      "id": "d4f93044-2912-4162-9f45-98883813d7e4",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "hidden",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Job URL": "={{ $('Parse Data').item.json.jobUrl }}",
+            "Company Name": "={{ $('Parse Data').item.json.companyName }}",
+            "Job Description": "={{ $('Parse Data').item.json.description }}",
+            "Job Key": "={{ $('Parse Data').item.json.id }}",
+            "Role": "={{ $('Parse Data').item.json.title }}",
+            "Date": "={{ $('Parse Data').item.json.publishedAt }}",
+            "Platform": "Job Board",
+            "Location": "={{ $('Parse Data').item.json.location }}",
+            "Salary": "={{ $('Parse Data').item.json.salary }}",
+            "Remote": "=",
+            "Expired": "=",
+            "Apply URL": "={{ $('Parse Data').item.json.applyUrl }}",
+            "Match %": "={{ $('Get Match % by comparing JD & Resume').item.json.output[0].content[0].text.score }}",
+            "Missing Skills": "={{ $('Get Match % by comparing JD & Resume').item.json.output[0].content[0].text.missing_skills }}",
+            "Resume": "={{ 'https://drive.google.com/file/d/' + $('Export Resume as PDF').item.json.id + '/view' }}"
+          },
+          "matchingColumns": [
+            "Job Key"
+          ],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Match %",
+              "displayName": "Match %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "JD Preview=LEFT(SUBSTITUTE(G2,CHAR(10),\" \"),200)&\"…\"",
+              "displayName": "JD Preview=LEFT(SUBSTITUTE(G2,CHAR(10),\" \"),200)&\"…\"",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job Key",
+              "displayName": "Job Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resume",
+              "displayName": "Resume",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Missing Skills",
+              "displayName": "Missing Skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Expired",
+              "displayName": "Expired",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Apply URL",
+              "displayName": "Apply URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5920,
+        2432
+      ],
+      "id": "f7d43961-25e8-4e4c-aaaf-73406aa56785",
+      "name": "Add Scraped Information on Job Tracker Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hidden",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "hidden",
+          "mode": "id"
+        },
+        "name": "={{ 'Resume_' + $('Parse Data').item.json.companyName.replace(/[^a-zA-Z0-9]/g, '_') }}",
+        "sameFolder": "={{false}}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "hidden",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "f4b4286a-d2c9-4aeb-afc8-ead45d9dbcf4",
+      "name": "Make a Resume Copy for the Job",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5248,
+        2432
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "hidden",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "=You are a resume tailoring bot.\n\nGoal:\nReturn ONLY:\n1) an updated SKILLS section (exactly 4 lines: Languages, Data & ML, Web & Backend, Tools & Platforms)\n2) an updated graduation_year (integer)\n\nInputs you will receive:\n- current_skills_section_text (4 lines)\n- missing_skills (list of strings; priority order = list order)\n- job_description_text (string)\n- line_char_limit (integer; default 125)\n\nHard rules:\n- Output MUST be valid JSON only. No markdown, no extra text.\n- Do NOT output the full resume. Only return skills_lines + graduation_year + overflow_skills.\n- Each skills_lines value should contain ONLY the comma-separated skills WITHOUT the label prefix (e.g., \"Java, Python, JavaScript\" NOT \"Languages: Java, Python, JavaScript\")\n- Skill validity filter: only add concrete tools/technologies (languages, frameworks, libraries, databases, cloud/platforms, dev tools, OS, CI/CD/testing tools, protocols, certifications). Exclude coursework/academic topics/theory/soft skills/generic terms (e.g., Graph Theory, Algorithms, Data Structures, Communication).\n- Deduplicate case-insensitively and normalize obvious variants.\n- Line length: each of the 4 lines must be <= line_char_limit characters (including the label text, even though labels will be added separately)\n- If not all valid missing skills fit, prioritize earlier missing_skills first and put the rest in overflow_skills.\n- Do not invent new categories. Do not rename categories.\n- Do not add in AIs as skills (ChatGPT, OpenAI, Copilot, etc --> none of these are actual skills).\n\nGraduation year rule:\n- If job_description_text implies the candidate is a sophomore → graduation_year = 2028.\n- If it implies the candidate is a junior → graduation_year = 2027.\n- Otherwise graduation_year = 2028.\n\nReturn JSON with EXACT keys:\n{\n  \"graduation_year\": 2028,\n  \"skills_lines\": {\n    \"Languages\": \"Java, Python, JavaScript, TypeScript, SQL, Bash, HTML/CSS, C, .NET\",\n    \"Data & ML\": \"Pandas, NumPy, scikit-learn, PyTorch, TensorFlow, Seaborn, Matplotlib, Keras\",\n    \"Web & Backend\": \"React, Next.js, REST/GraphQL APIs, MySQL\",\n    \"Tools & Platforms\": \"Git, AWS, CI/CD, Jupyter Notebook, Linux, crontab, smtplib, Microsoft Tools\"\n  },\n  \"overflow_skills\": []\n}\n\nNote: The values in skills_lines should NOT include the label prefix. Labels will be added when inserting into the document."
+            },
+            {
+              "content": "=line_char_limit: 120\n\nresume_text: {{ $('Get Template Resume').item.json.content }}\n\njob_description_text: {{ $('Parse Data').item.json.description }}\n\nmissing_skills (priority order = this list order): {{ JSON.stringify($json.missing_skills || $json.output?.[0]?.content?.[0]?.text?.missing_skills || []) }}\n\nCurrent skills section (for reference):\nLanguages: Java, Python, JavaScript, TypeScript, SQL, Bash, HTML/CSS, C, .NET\nData & ML: Pandas, NumPy, scikit-learn, PyTorch, TensorFlow, Seaborn, Matplotlib, Keras\nWeb & Backend: React, Next.js, REST/GraphQL APIs, MySQL\nTools & Platforms: Git, AWS, CI/CD, Jupyter Notebook, Linux, crontab, smtplib, Microsoft Tools"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        4912,
+        2432
+      ],
+      "id": "e04544d5-8962-4437-9f98-1ec8d5c0699a",
+      "name": "Tailor Resume to JD",
+      "credentials": {
+        "openAiApi": {
+          "id": "hidden",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an evaluation bot. Your job is to score how closely a job listing matches a candidate’s skill set and constraints.\n\nFor every job listing, return a TOTAL SCORE out of 100 by adding points from the rubric below. Always show the breakdown (points earned in each section + 1–2 sentences explaining why). If information is missing from the job listing, give 0 for that sub-item and label it “Unknown.”\n\nIMPORTANT RULES\n- I ONLY want internships. If the role is a CO-OP (or “cooperative education”, “rotation”, “semester-long”, “6-month placement”), apply a heavy penalty: Eligibility points become 5/15 max, and TOTAL SCORE is capped at 50/100. Keep the verdict as “Skip (co-op)” unless everything else is perfect and you label it “Maybe (co-op).”\n- I do NOT want cybersecurity-focused roles. If it’s primarily cyber/infosec/ethical hacking, apply a heavy penalty: Constraints points become 0/10 and TOTAL SCORE is capped at 60/100.\n- Graduation window: 2027–2029.\n\nAUTO-DROP / FILTERING\nAfter scoring, decide action = \"keep\" or \"drop\".\n\nDrop immediately if ANY are true:\n- Co-op detected (or rotation/semester/6-month placement)\n- Not an internship (C = 0)\n- Primarily cybersecurity (cap applies)\n- Role relevance is weak: A <= 5/25\n- Total score < drop_score_threshold (set as 60)\n\nOtherwise action = \"keep\".\n\n-------------------------\nINPUTS YOU WILL RECEIVE\n1) Candidate profile (resume/skills/preferences)\n2) Job listing text\n-------------------------\n\nRUBRIC (TOTAL = 100)\n\nA) Role & Career Fit (25)\n- 25: Direct match to target roles (SWE / AI-ML / Data / Full-stack) and daily work aligns strongly\n- 15: Mostly relevant but mixed responsibilities or partially off-target\n- 5: Weak relevance (adjacent tech role)\n- 0: Not aligned\n\nB) Technical Skills Match (35)\nB1) Required skills match (25)\n- Score based on how many required skills the candidate clearly has (and has used)\nB2) Preferred/nice-to-have match (10)\n- Score based on how many preferred skills the candidate has\n\nC) Level & Eligibility (15)\n- Internship: 15/15\n- Co-op: max 5/15 (and cap TOTAL at 50; usually Verdict = Skip (co-op))\n- Not an internship/co-op: 0/15\n\nD) Experience Signal (15)\n- Candidate has directly relevant past experience/projects (10)\n- Evidence of impact (metrics, shipped work, leadership, ownership) (5)\n\nE) Constraints / Dealbreakers (10)\n- Non-cybersecurity role: 10/10\n- Primarily cybersecurity: 0/10 (and cap TOTAL at 60)\n\n-------------------------\nOUTPUT FORMAT (ALWAYS)\n1. Score\n2. Reasoning\n3. Quick verdict: Apply / Maybe / Skip\n\n-------------------------\nEXAMPLE SCORING\nExample job listing (short):\n“Software Engineering Intern (Summer 2026) — Web Platform. Requirements: JavaScript/TypeScript, React, Git, basic SQL. Preferred: Next.js, Node, AWS. Must be pursuing BS in CS or related, graduating 2027–2029. Not a cybersecurity role.”\n\nIf the job fits mostly, is an internship, is tech-based, matches my target roles + grad window (2027–2029), and is not cyber, an example score could be:\nA 20/25 + B 28/35 + C 15/15 + D 8/15 + E 10/10 = TOTAL 81/100.\n\n\nReturn JSON ONLY. No text outside JSON.\nverdict must be \"true\" if action is keep, else \"false\" (lowercase strings only).\nmissing_skills must include ONLY concrete tools/technologies (languages, frameworks, libraries, databases, cloud/platforms, dev tools). Exclude coursework/academic topics/theory and generic terms. Don't include AIs in skills like GitHub Copilot, OpenAI API, etc. \n\n\nPlease return JSON data structured the following way (RETURN JSON ONLY — no extra text outside the JSON):\n\n{\n  \"score\": 0,              // integer 0-100 (after any caps/penalties)\n  \"reasoning\": \"\",         // brief explanation of the score (2–6 sentences)\n  \"missing_skills\": [],    // ONLY a list of skill/keyword strings that appear in the job listing but are NOT clearly present in the resume. Ensure that this is only tools/languages present and not tasks/experiences.\n  \"verdict\": \"true or false\"  // whether or not the job is kept for the following filter)\n}"
+            },
+            {
+              "content": "=EVALUATE THIS JOB LISTING USING YOUR 100-POINT RUBRIC + RULES (internship-only, co-op penalty, not-cyber penalty, grad window 2027–2029).\nHere’s the job listing details:\n\nJob Key: {{ $('Parse Data').item.json.id }}\nJob Title: {{ $('Parse Data').item.json.title }}\nCompany: {{ $('Parse Data').item.json.companyName }}\nJob URL: {{ $('Parse Data').item.json.jobUrl }}\nJob Description: {{ $('Parse Data').item.json.description }}\n\n\nSector: {{ $('Parse Data').item.json.sector }}\nLocation: {{ $('Parse Data').item.json.location }}\n\nRemote: {{ $('Parse Data').item.json.isRemote }}\nWork setting (if present): {{ $('Parse Data').item.json.attributes?.includes('In-person') ? 'In-person' : ($('Parse Data').item.json.attributes?.includes('Remote') ? 'Remote' : 'Unknown') }}\n\nContract Type: {{ $('Parse Data').item.json.contractType }}\nExperience Level: {{ $('Parse Data').item.json.experienceLevel }} \n\nSalary: {{ $('Parse Data').item.json.salary }}\n\nDate Posted: {{ $('Parse Data').item.json.postedTime }}\nApplicant Count: {{ $('Parse Data').item.json.applicationsCount }}\n\nBenefits: {{ $('Parse Data').item.json.benefits }}\n\nApply Type: {{ $('Parse Data').item.json.applyType }}\nApply URL: {{ $('Parse Data').item.json.applyUrl }}\n\n========================\nCANDIDATE CONSTRAINTS + TARGETS\n========================\nTarget roles: SWE / Full-stack / AI-ML / Data\nHard preferences:\n- Internship only (co-op is penalized)\n- Graduation window: 2027–2029\n- Avoid cybersecurity-focused roles\n\n========================\nCANDIDATE SKILL SET (SUMMARY)\n========================\nTop technical strengths (bullets):\n- <add 5–10 bullets of your strongest skills/tools>\nMost relevant experience highlights (bullets):\n- <add 3–6 bullets of your best matching experience/projects>\n\n========================\nCANDIDATE RESUME (TEXT)\n========================<<PASTE_RESUME_TEXT_HERE>>\n\n\n\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        5696,
+        2048
+      ],
+      "id": "25911e86-ca1d-4960-934c-5f93dfd7b30f",
+      "name": "Get Match % by comparing JD & Resume",
+      "credentials": {
+        "openAiApi": {
+          "id": "hidden",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Call API": {
+      "main": [
+        [
+          {
+            "node": "Parse Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Data": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Copied Resume": {
+      "main": [
+        [
+          {
+            "node": "Export Resume as PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export Resume as PDF": {
+      "main": [
+        [
+          {
+            "node": "Add Scraped Information on Job Tracker Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Template Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Irrelevant Jobs": {
+      "main": [
+        [
+          {
+            "node": "Tailor Resume to JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Get Match % by comparing JD & Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Template Resume": {
+      "main": [
+        [
+          {
+            "node": "Call API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make a Resume Copy for the Job": {
+      "main": [
+        [
+          {
+            "node": "Update Copied Resume",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tailor Resume to JD": {
+      "main": [
+        [
+          {
+            "node": "Make a Resume Copy for the Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Match % by comparing JD & Resume": {
+      "main": [
+        [
+          {
+            "node": "Filter Irrelevant Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "035b89b5-6028-4479-8b7a-3af4e855dbee",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "KT4nzBNhTzFdW8v3wlXlp",
+  "tags": []
+}
